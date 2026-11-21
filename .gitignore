@@ -1,0 +1,7 @@
+.venv/
+.vscode/
+__pycache__/
+*.db
+*.db-shm
+*.db-wal
+data/design_images/
