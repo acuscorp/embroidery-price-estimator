@@ -81,6 +81,17 @@ def calculate_material_costs(materials, quantity):
     return detail, total
 
 
+def calculate_design_materials(material_catalog, design_materials, quantity):
+    consumption = pd.DataFrame(
+        design_materials,
+        columns=["Material", "Consumo por pieza"],
+    )
+    priced_materials = material_catalog.drop(
+        columns=["Consumo por pieza"], errors="ignore"
+    ).merge(consumption, on="Material", how="inner")
+    return calculate_material_costs(priced_materials, quantity)
+
+
 def calculate_direct_costs(extras):
     if extras.empty:
         return 0.0

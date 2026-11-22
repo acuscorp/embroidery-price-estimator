@@ -35,7 +35,13 @@ class DesignImageTests(unittest.TestCase):
         ):
             patcher.start()
         quote_repository.init_database()
-        self.design_id = design_repository.create_design("000", "Palomas")
+        subcategory_id = design_repository.create_subcategory("Palomas")
+        self.design_id = design_repository.create_design(
+            "0000",
+            subcategory_id,
+            "Palomas",
+            {"ancho_cm": 8.0, "alto_cm": 6.0},
+        )
 
     def tearDown(self):
         for patcher in (

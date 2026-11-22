@@ -1,30 +1,43 @@
-import pandas as pd
 import streamlit as st
 
 from services.quote_calculations import calculate_financials
+from views.configuration.state import ensure_configuration_state
 
 
-DEFAULT_MONTHLY_COSTS = [
-    {"Concepto": "Renta", "Activo": True, "Costo mensual ($)": 3000.0},
-    {"Concepto": "Electricidad", "Activo": True, "Costo mensual ($)": 500.0},
-    {"Concepto": "Internet", "Activo": True, "Costo mensual ($)": 390.0},
-    {"Concepto": "Agua para beber", "Activo": True, "Costo mensual ($)": 120.0},
-    {"Concepto": "Limpieza del taller", "Activo": True, "Costo mensual ($)": 200.0},
-    {"Concepto": "Lubricantes y consumibles de máquina", "Activo": True, "Costo mensual ($)": 200.0},
-    {"Concepto": "Depreciación", "Activo": True, "Costo mensual ($)": 1500.0},
-    {"Concepto": "Reserva de refacciones", "Activo": True, "Costo mensual ($)": 250.0},
-]
+def ensure_financial_state():
+    ensure_configuration_state()
+
+
+def calculate_financial_config():
+    ensure_financial_state()
+    monthly_costs = st.session_state.monthly_costs
+    monthly_goal_input = st.session_state.monthly_goal
+    idle_pct = st.session_state.idle_pct
+    work_hours = st.session_state.work_hours
+    work_days = st.session_state.work_days
+    operator_monthly_pay = st.session_state.operator_monthly_pay
+    financial = calculate_financials(
+        monthly_costs, monthly_goal_input, idle_pct, work_hours, work_days,
+        operator_monthly_pay,
+    )
+    financial.update({
+        "monthly_costs": monthly_costs,
+        "monthly_goal_input": monthly_goal_input,
+        "idle_pct": idle_pct,
+        "work_hours": work_hours,
+        "work_days": work_days,
+        "operator_monthly_pay": operator_monthly_pay,
+    })
+    return financial
 
 
 def render_financial_config():
-    st.header("1. Gastos indirectos y capacidad")
+    st.header("Gastos indirectos y capacidad")
     st.write(
-        "Los gastos indirectos del taller se combinan con el costo mensual del "
-        "operador para calcular una tarifa por minuto-recurso. Los materiales y "
-        "otros cargos directos del pedido se capturan por separado."
+        "Configura los gastos mensuales y la capacidad del taller. Estos valores "
+        "se guardan en cada cotización."
     )
-    if "monthly_costs" not in st.session_state:
-        st.session_state.monthly_costs = pd.DataFrame(DEFAULT_MONTHLY_COSTS)
+    ensure_financial_state()
     monthly_costs = st.data_editor(
         st.session_state.monthly_costs,
         num_rows="dynamic",
@@ -73,10 +86,7 @@ def render_financial_config():
             step=0.01, format="%.2f", key="operator_monthly_pay",
         )
 
-    financial = calculate_financials(
-        monthly_costs, monthly_goal_input, idle_pct, work_hours, work_days,
-        operator_monthly_pay,
-    )
+    financial = calculate_financial_config()
     if not financial["goal_entered"]:
         st.warning(
             "Ingresa el objetivo de ganancia mensual para completar esta "
@@ -110,12 +120,4 @@ def render_financial_config():
             "Tarifa única", f"${financial['allocation_rate']:,.6f} / min-recurso"
         )
 
-    financial.update({
-        "monthly_costs": monthly_costs,
-        "monthly_goal_input": monthly_goal_input,
-        "idle_pct": idle_pct,
-        "work_hours": work_hours,
-        "work_days": work_days,
-        "operator_monthly_pay": operator_monthly_pay,
-    })
     return financial

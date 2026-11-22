@@ -4,9 +4,14 @@ import pandas as pd
 import streamlit as st
 
 from repositories.design_repository import (
+    create_subcategory,
     create_design,
+    delete_subcategory,
     list_designs,
+    list_subcategories,
+    set_subcategory_active,
     set_design_active,
+    update_subcategory,
     update_design,
 )
 from models.designs import DESIGN_CATEGORIES
@@ -28,6 +33,11 @@ def _design_label(design):
     return f"{design['codigo']} — {design['nombre']}"
 
 
+def _subcategory_label(subcategory):
+    status = "" if subcategory["activo"] else " (Archivada)"
+    return f"{subcategory['id']:04d} — {subcategory['nombre']}{status}"
+
+
 def render_designs_page():
     _reset_confirmation_after_rerun()
     st.header("Catálogo de diseños")
@@ -35,6 +45,92 @@ def render_designs_page():
         "Los diseños guardados se pueden seleccionar al cotizar. También puedes "
         "capturar un diseño nuevo directamente en una cotización sin guardarlo."
     )
+    with st.expander("Administrar subcategorías"):
+        st.caption(
+            "Cada subcategoría recibe un identificador único que no se reutiliza."
+        )
+        with st.form("create_subcategory_form"):
+            new_subcategory_name = st.text_input(
+                "Nombre de subcategoría", placeholder="Ej. Anillos"
+            )
+            if st.form_submit_button("Agregar subcategoría"):
+                try:
+                    create_subcategory(new_subcategory_name)
+                except (ValueError, sqlite3.Error) as error:
+                    st.error(f"No se pudo crear la subcategoría: {error}")
+                else:
+                    st.rerun()
+
+        subcategories = list_subcategories(include_archived=True)
+        if subcategories:
+            subcategory_id = st.selectbox(
+                "Subcategoría para administrar",
+                options=[item["id"] for item in subcategories],
+                format_func=lambda value: _subcategory_label(
+                    next(item for item in subcategories if item["id"] == value)
+                ),
+                key="catalog_selected_subcategory",
+            )
+            selected_subcategory = next(
+                item for item in subcategories if item["id"] == subcategory_id
+            )
+            with st.form(f"edit_subcategory_{subcategory_id}"):
+                updated_name = st.text_input(
+                    "Nombre", value=selected_subcategory["nombre"],
+                    key=f"subcategory_name_{subcategory_id}",
+                )
+                confirm_update = st.checkbox(
+                    "Confirmo actualizar la subcategoría",
+                    key=f"confirm_subcategory_update_{subcategory_id}",
+                )
+                if st.form_submit_button(
+                    "Guardar subcategoría", disabled=not confirm_update
+                ):
+                    try:
+                        update_subcategory(subcategory_id, updated_name)
+                    except (ValueError, sqlite3.Error) as error:
+                        st.error(f"No se pudo actualizar: {error}")
+                    else:
+                        st.session_state["confirmation_keys_to_reset"] = [
+                            f"confirm_subcategory_update_{subcategory_id}"
+                        ]
+                        st.rerun()
+
+            subcategory_actions = st.columns(2)
+            confirm_subcategory_status = subcategory_actions[0].checkbox(
+                "Confirmar cambio de estado",
+                key=f"confirm_subcategory_status_{subcategory_id}",
+            )
+            if subcategory_actions[0].button(
+                "Reactivar subcategoría"
+                if not selected_subcategory["activo"]
+                else "Archivar subcategoría",
+                disabled=not confirm_subcategory_status,
+                key=f"toggle_subcategory_{subcategory_id}",
+            ):
+                set_subcategory_active(
+                    subcategory_id, not selected_subcategory["activo"]
+                )
+                st.session_state["confirmation_keys_to_reset"] = [
+                    f"confirm_subcategory_status_{subcategory_id}"
+                ]
+                st.rerun()
+            confirm_subcategory_delete = subcategory_actions[1].checkbox(
+                "Confirmo eliminar subcategoría",
+                key=f"confirm_subcategory_delete_{subcategory_id}",
+            )
+            if subcategory_actions[1].button(
+                "Eliminar subcategoría",
+                disabled=not confirm_subcategory_delete,
+                key=f"delete_subcategory_{subcategory_id}",
+            ):
+                try:
+                    delete_subcategory(subcategory_id)
+                except (ValueError, sqlite3.Error) as error:
+                    st.error(f"No se pudo eliminar: {error}")
+                else:
+                    st.rerun()
+
     designs = list_designs(include_archived=True)
     search = st.text_input(
         "Buscar por código o nombre",
@@ -49,7 +145,14 @@ def render_designs_page():
             {
                 "Código": design["codigo"],
                 "Categoría": DESIGN_CATEGORIES[design["categoria_codigo"]],
+                "Subcategoría": design["subcategory_name"],
                 "Nombre": design["nombre"],
+                "Ancho (cm)": (
+                    design["configuracion"].get("ancho_cm") or "Pendiente"
+                ),
+                "Alto (cm)": (
+                    design["configuracion"].get("alto_cm") or "Pendiente"
+                ),
                 "Estado": "Activo" if design["activo"] else "Archivado",
             }
             for design in filtered
@@ -60,7 +163,7 @@ def render_designs_page():
 
     with st.expander("Agregar diseño al catálogo"):
         with st.form("create_design_form"):
-            cols = st.columns([1, 3])
+            cols = st.columns([1, 2, 2])
             with cols[0]:
                 category = st.selectbox(
                     "Categoría",
@@ -71,15 +174,75 @@ def render_designs_page():
                     key="new_catalog_design_category",
                 )
             with cols[1]:
+                available_subcategories = list_subcategories()
+                if not available_subcategories:
+                    st.info("Agrega una subcategoría antes de crear un diseño.")
+                    subcategory_id = None
+                else:
+                    subcategory_id = st.selectbox(
+                        "Subcategoría",
+                        options=[item["id"] for item in available_subcategories],
+                        format_func=lambda value: _subcategory_label(
+                            next(
+                                item for item in available_subcategories
+                                if item["id"] == value
+                            )
+                        ),
+                        key="new_catalog_design_subcategory",
+                    )
+            with cols[2]:
                 name = st.text_input(
                     "Nombre del diseño",
                     placeholder="Ej. Palomas",
                     key="new_catalog_design_name",
                 )
-            st.caption("El código se forma automáticamente, por ejemplo: 000-palomas.")
+            size_cols = st.columns(2)
+            with size_cols[0]:
+                width = st.number_input(
+                    "Ancho (cm)", min_value=0.0, value=0.0, step=0.1,
+                    key="new_catalog_design_width",
+                )
+            with size_cols[1]:
+                height = st.number_input(
+                    "Alto (cm)", min_value=0.0, value=0.0, step=0.1,
+                    key="new_catalog_design_height",
+                )
+            time_cols = st.columns(3)
+            with time_cols[0]:
+                embroidery_minutes = st.number_input(
+                    "Bordado por corrida (min)", min_value=0.0, value=12.0,
+                    step=0.1, key="new_catalog_design_embroidery",
+                )
+            with time_cols[1]:
+                setup_minutes = st.number_input(
+                    "Preparación (min)", min_value=0.0, value=0.0,
+                    step=0.1, key="new_catalog_design_setup",
+                )
+            with time_cols[2]:
+                extra_minutes = st.number_input(
+                    "Tiempo adicional (min)", min_value=0.0, value=0.0,
+                    step=0.1, key="new_catalog_design_extra",
+                )
+            st.caption(
+                "El código se asigna automáticamente: categoryId-subcategoryId-designId."
+            )
             if st.form_submit_button("Guardar diseño"):
+                configuration = {
+                    "ancho_cm": width,
+                    "alto_cm": height,
+                    "bordado_minutos": embroidery_minutes,
+                    "preparacion_minutos": setup_minutes,
+                    "minutos_adicionales": extra_minutes,
+                    "materiales": [],
+                }
                 try:
-                    create_design(category, name)
+                    if subcategory_id is None:
+                        raise ValueError(
+                            "Crea o selecciona una subcategoría."
+                        )
+                    create_design(
+                        category, subcategory_id, name, configuration
+                    )
                 except (ValueError, sqlite3.IntegrityError) as error:
                     st.error(f"No se pudo guardar el diseño: {error}")
                 else:
@@ -103,7 +266,7 @@ def render_designs_page():
     )
     selected = next(item for item in designs if item["id"] == selected_id)
     with st.form(f"edit_design_form_{selected_id}"):
-        cols = st.columns([1, 3])
+        cols = st.columns([1, 2, 2])
         with cols[0]:
             category = st.selectbox(
                 "Categoría",
@@ -115,10 +278,64 @@ def render_designs_page():
                 key=f"edit_design_category_{selected_id}",
             )
         with cols[1]:
+            design_subcategories = list_subcategories(include_archived=True)
+            editable_subcategories = [
+                subcategory for subcategory in design_subcategories
+                if subcategory["activo"]
+                or subcategory["id"] == selected["subcategory_id"]
+            ]
+            subcategory_id = st.selectbox(
+                "Subcategoría",
+                options=[item["id"] for item in editable_subcategories],
+                index=[
+                    item["id"] for item in editable_subcategories
+                ].index(selected["subcategory_id"]),
+                format_func=lambda value: _subcategory_label(
+                    next(
+                        item for item in editable_subcategories
+                        if item["id"] == value
+                    )
+                ),
+                key=f"edit_design_subcategory_{selected_id}",
+            )
+        with cols[2]:
             name = st.text_input(
                 "Nombre del diseño",
                 value=selected["nombre"],
                 key=f"edit_design_name_{selected_id}",
+            )
+        config = selected["configuracion"]
+        dimension_cols = st.columns(2)
+        with dimension_cols[0]:
+            width = st.number_input(
+                "Ancho (cm)", min_value=0.0,
+                value=float(config.get("ancho_cm", 0.0)), step=0.1,
+                key=f"edit_design_width_{selected_id}",
+            )
+        with dimension_cols[1]:
+            height = st.number_input(
+                "Alto (cm)", min_value=0.0,
+                value=float(config.get("alto_cm", 0.0)), step=0.1,
+                key=f"edit_design_height_{selected_id}",
+            )
+        time_cols = st.columns(3)
+        with time_cols[0]:
+            embroidery_minutes = st.number_input(
+                "Bordado por corrida (min)", min_value=0.0,
+                value=float(config.get("bordado_minutos", 12.0)), step=0.1,
+                key=f"edit_design_embroidery_{selected_id}",
+            )
+        with time_cols[1]:
+            setup_minutes = st.number_input(
+                "Preparación (min)", min_value=0.0,
+                value=float(config.get("preparacion_minutos", 0.0)), step=0.1,
+                key=f"edit_design_setup_{selected_id}",
+            )
+        with time_cols[2]:
+            extra_minutes = st.number_input(
+                "Tiempo adicional (min)", min_value=0.0,
+                value=float(config.get("minutos_adicionales", 0.0)), step=0.1,
+                key=f"edit_design_extra_{selected_id}",
             )
         confirm_update = st.checkbox(
             "Confirmo guardar estos cambios",
@@ -129,7 +346,17 @@ def render_designs_page():
             disabled=not confirm_update,
         ):
             try:
-                update_design(selected_id, category, name)
+                configuration = {
+                    **config,
+                    "ancho_cm": width,
+                    "alto_cm": height,
+                    "bordado_minutos": embroidery_minutes,
+                    "preparacion_minutos": setup_minutes,
+                    "minutos_adicionales": extra_minutes,
+                }
+                update_design(
+                    selected_id, category, subcategory_id, name, configuration
+                )
             except (ValueError, sqlite3.IntegrityError) as error:
                 st.error(f"No se pudo actualizar el diseño: {error}")
             else:

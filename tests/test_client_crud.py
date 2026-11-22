@@ -37,6 +37,31 @@ class ClientCrudTests(unittest.TestCase):
         client_repository.delete_client(self.client_id)
         self.assertIsNone(client_repository.get_client(self.client_id))
 
+    def test_search_matches_names_accents_company_phone_and_email(self):
+        self.assertEqual(
+            [client["id"] for client in client_repository.search_clients("ana lopez")],
+            [self.client_id],
+        )
+        self.assertEqual(
+            [client["id"] for client in client_repository.search_clients("LOPEZ")],
+            [self.client_id],
+        )
+        client_repository.update_client(self.client_id, {
+            "nombres": "Ana",
+            "apellidos": "López",
+            "empresa": "Bordados del Sur",
+            "telefono": "555-0101",
+            "correo": "ana@example.com",
+            "direccion": "",
+            "notas": "",
+        })
+        self.assertEqual(
+            [client["id"] for client in client_repository.search_clients("555-0101")],
+            [self.client_id],
+        )
+        self.assertEqual(client_repository.search_clients("   "), [])
+        self.assertEqual(client_repository.search_clients("missing"), [])
+
     def test_client_with_quote_history_must_be_archived_not_deleted(self):
         quote_repository.save_quote(
             "COT-1",

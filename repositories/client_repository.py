@@ -1,5 +1,6 @@
 import sqlite3
 from datetime import datetime
+import unicodedata
 
 from repositories.quote_repository import DB_PATH
 
@@ -69,6 +70,29 @@ def list_clients(include_archived=False):
     with sqlite3.connect(DB_PATH) as connection:
         connection.row_factory = sqlite3.Row
         return [dict(row) for row in connection.execute(query).fetchall()]
+
+
+def search_clients(search, limit=20):
+    normalized_search = _normalize_search_text(search).strip()
+    if not normalized_search:
+        return []
+    search_terms = normalized_search.split()
+    matches = []
+    for client in list_clients():
+        searchable = _normalize_search_text(" ".join(
+            str(client.get(field) or "")
+            for field in (
+                "nombres", "apellidos", "empresa", "telefono", "correo"
+            )
+        ))
+        if all(term in searchable for term in search_terms):
+            matches.append(client)
+    return matches[:limit]
+
+
+def _normalize_search_text(value):
+    normalized = unicodedata.normalize("NFKD", value.casefold())
+    return "".join(char for char in normalized if not unicodedata.combining(char))
 
 
 def get_client(client_id):

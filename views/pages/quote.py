@@ -1,22 +1,42 @@
 from datetime import date, datetime
+import json
 
 import pandas as pd
 import streamlit as st
 
 from exports.pdf_export import build_quote_pdfs
-from repositories.quote_repository import quote_exists, save_quote
+from models.designs import LEGACY_DESIGN_CATEGORIES
+from repositories.quote_repository import (
+    get_quote,
+    quote_exists,
+    save_quote,
+)
 from services.quote_calculations import (
+    calculate_design_materials,
     calculate_design_line,
-    calculate_material_costs,
     find_applicable_margin,
     validate_quote,
 )
 from views.configuration.designs import new_design_item, render_designs
-from views.configuration.direct_costs import render_direct_cost_config
-from views.configuration.financial import render_financial_config
+from views.configuration.direct_costs import get_direct_cost_config
+from views.configuration.financial import calculate_financial_config
 from views.configuration.margin import render_margin_config
-from views.configuration.materials import render_material_config
+from views.configuration.materials import get_material_config
 from views.configuration.order import render_order_config
+
+
+def _start_new_quote():
+    keys_to_clear = [
+        key for key in st.session_state
+        if key.startswith(("quote_", "design_", "confirm_update_quote_"))
+        or key in {
+            "pending_quote_load",
+            "pending_quote_metadata",
+            "delivery_date",
+        }
+    ]
+    for key in keys_to_clear:
+        del st.session_state[key]
 
 
 def _restore_quote():
@@ -30,6 +50,13 @@ def _restore_quote():
         for name in ("monthly_costs", "materials", "extras", "margin_tiers"):
             if name in loaded:
                 st.session_state[name] = pd.DataFrame(loaded[name])
+        st.session_state.pop("monthly_cost_editor", None)
+        st.session_state.pop("materials_editor", None)
+        legacy_materials = loaded.get("materials", [])
+        legacy_consumption = {
+            row.get("Material", ""): row.get("Consumo por pieza", 0.0)
+            for row in legacy_materials
+        }
 
         design_items = loaded.get("design_items")
         if not design_items:
@@ -48,11 +75,36 @@ def _restore_quote():
         st.session_state.quote_design_items = design_items
         for item in design_items:
             prefix = f"design_{item['id']}_"
+            if "materiales" not in item:
+                item["materiales"] = [
+                    {
+                        "Material": row.get("Material", ""),
+                        "Consumo por pieza": legacy_consumption.get(
+                            row.get("Material", ""), 0.0
+                        ),
+                    }
+                    for row in legacy_materials
+                    if row.get("Material")
+                ]
+            st.session_state.pop(prefix + "materials_editor", None)
             st.session_state[prefix + "catalog_id"] = item.get("catalog_id")
             st.session_state[prefix + "category"] = item.get(
-                "categoria_codigo", "000"
+                "category_id",
+                LEGACY_DESIGN_CATEGORIES.get(
+                    item.get("categoria_codigo", "0000"),
+                    item.get("categoria_codigo", "0000"),
+                ),
             )
+            st.session_state[prefix + "subcategory_id"] = item.get(
+                "subcategory_id"
+            )
+            st.session_state[prefix + "design_number"] = item.get(
+                "design_number"
+            )
+            st.session_state[prefix + "code"] = item.get("codigo", "")
             st.session_state[prefix + "name"] = item.get("nombre", "")
+            st.session_state[prefix + "width"] = item.get("ancho_cm", 0.0)
+            st.session_state[prefix + "height"] = item.get("alto_cm", 0.0)
             st.session_state[prefix + "quantity"] = item.get("cantidad", 10)
             st.session_state[prefix + "embroidery_minutes"] = item.get(
                 "bordado_minutos", 12.0
@@ -63,6 +115,7 @@ def _restore_quote():
             st.session_state[prefix + "extra_minutes"] = item.get(
                 "minutos_adicionales", 0.0
             )
+            st.session_state[prefix + "materials"] = item.get("materiales", [])
 
     if "pending_quote_metadata" in st.session_state:
         metadata = st.session_state.pop("pending_quote_metadata")
@@ -74,10 +127,12 @@ def _restore_quote():
 def _calculate_design_items(design_items, materials, extras_total, order,
                             financial, margin_tiers):
     line_inputs = []
+    material_details = []
     for item in design_items:
-        _, material_total = calculate_material_costs(
-            materials, item["cantidad"]
+        details, material_total = calculate_design_materials(
+            materials, item.get("materiales", []), item["cantidad"]
         )
+        material_details.append(details)
         times = calculate_design_line(
             item["cantidad"],
             order["heads"],
@@ -134,7 +189,13 @@ def _calculate_design_items(design_items, materials, extras_total, order,
         item.update(final)
         item["otros_directos_asignados"] = share
         item["margen_pct"] = margin_pct
-    return line_inputs
+    combined_details = (
+        pd.concat(material_details, ignore_index=True)
+        if material_details else pd.DataFrame()
+    )
+    return line_inputs, combined_details, sum(
+        item["materiales_total"] for item in line_inputs
+    )
 
 
 def _build_quote_payload(design_items, order, financial, materials_total,
@@ -188,6 +249,11 @@ def _build_quote_payload(design_items, order, financial, materials_total,
 
 
 def render_quote_page():
+    st.button(
+        "Nueva cotización",
+        on_click=_start_new_quote,
+        key="start_new_quote",
+    )
     _restore_quote()
     pending_folio = st.session_state.pop("pending_quote_folio", None)
     if pending_folio:
@@ -200,34 +266,33 @@ def render_quote_page():
     saved_message = st.session_state.pop("quote_saved_message", None)
     if saved_message:
         st.success(saved_message)
-    financial = render_financial_config()
+    financial = calculate_financial_config()
     order = render_order_config()
-    design_items = render_designs()
-    total_quantity = sum(item["cantidad"] for item in design_items)
-    materials, material_detail, materials_total = render_material_config(
-        total_quantity
-    )
-    extras, extras_total = render_direct_cost_config()
+    materials = get_material_config()
+    design_items = render_designs(materials)
+    extras, extras_total = get_direct_cost_config()
     margin_tiers = render_margin_config()
-    calculated_items = _calculate_design_items(
+    calculated_items, material_detail, materials_total = _calculate_design_items(
         design_items, materials, extras_total, order, financial, margin_tiers
     )
-    designs_complete = all(
+    designs_complete = bool(design_items) and all(
         item["nombre"].strip()
-        and item["codigo"].startswith(f"{item['categoria_codigo']}-")
+        and item["subcategory_id"] is not None
+        and item["codigo"].startswith(
+            f"{item['category_id']}-{item['subcategory_id']:04d}-"
+        )
+        and item["ancho_cm"] > 0
+        and item["alto_cm"] > 0
         for item in design_items
     )
-    if not designs_complete:
-        st.warning(
-            "Asigna un nombre válido a cada diseño para generar su código "
-            "antes de guardar la cotización."
-        )
 
-    st.header("7. Resultado por diseño")
+    st.header("Resultado por diseño")
     display = pd.DataFrame([
         {
             "Código": item["codigo"],
             "Diseño": item["nombre"] or "Sin nombre",
+            "Ancho (cm)": item["ancho_cm"],
+            "Alto (cm)": item["alto_cm"],
             "Piezas": item["cantidad"],
             "Corridas": item["runs"],
             "Costo total ($)": item["cost_total"],
@@ -288,6 +353,11 @@ def render_quote_page():
             "para cada diseño. Los otros costos directos compartidos se "
             "distribuyen proporcionalmente entre los diseños."
         )
+    if not financial["goal_entered"]:
+        st.warning(
+            "Falta el objetivo de ganancia mensual. Captúralo en "
+            "Configuración para completar esta cotización."
+        )
     st.caption("El margen se aplica sobre el precio de venta. No se calcula IVA.")
 
     quote = _build_quote_payload(
@@ -334,18 +404,36 @@ def render_quote_page():
             "Confirmo actualizar la cotización existente",
             key=f"confirm_update_quote_{folio}",
         )
+    missing_requirements = []
+    if not order["client_name"].strip():
+        missing_requirements.append("Agregar o seleccionar un cliente.")
+    if not design_items:
+        missing_requirements.append("Agregar al menos un diseño.")
+    elif not designs_complete:
+        for index, item in enumerate(design_items, start=1):
+            if not item["nombre"].strip():
+                missing_requirements.append(
+                    f"Escribir el nombre del diseño {index}."
+                )
+            if item["subcategory_id"] is None:
+                missing_requirements.append(
+                    f"Seleccionar la subcategoría del diseño {index}."
+                )
+            if item["ancho_cm"] <= 0 or item["alto_cm"] <= 0:
+                missing_requirements.append(
+                    f"Capturar ancho y alto mayores a cero (cm) para el diseño {index}."
+                )
+    if updating and not confirmation:
+        missing_requirements.append(
+            "Confirmar la actualización de la cotización existente."
+        )
     if st.button(
         "Confirmar actualización" if updating else "Guardar cotización",
         use_container_width=True,
-        disabled=not confirmation or not designs_complete,
+        disabled=bool(missing_requirements),
         key="save_quote",
     ):
-        if not folio:
-            folio = f"COT-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-            st.session_state["pending_quote_folio"] = folio
-            quote["folio"] = folio
-            snapshot["folio"] = folio
-        save_quote(
+        saved_quote_id = save_quote(
             folio,
             order["client_name"].strip(),
             order["client_phone"].strip(),
@@ -355,21 +443,27 @@ def render_quote_page():
             snapshot,
             client_id=order["client_id"],
         )
+        saved_quote = get_quote(saved_quote_id)
+        folio = saved_quote["folio"]
         message = (
             f"Cotización actualizada con folio {folio}."
             if updating
             else f"Cotización guardada con folio {folio}."
         )
+        st.session_state["pending_quote_load"] = json.loads(
+            saved_quote["datos_json"]
+        )
+        st.session_state["pending_quote_folio"] = folio
+        st.session_state["quote_saved_message"] = message
         if updating:
             st.session_state["quote_confirmation_key_to_reset"] = (
                 f"confirm_update_quote_{folio}"
             )
-            st.session_state["quote_saved_message"] = message
-            st.rerun()
-        if not order["quote_folio"].strip():
-            st.session_state["quote_saved_message"] = message
-            st.rerun()
-        st.success(message)
+        st.rerun()
+    if missing_requirements:
+        st.caption("Para habilitar el guardado falta:")
+        for requirement in missing_requirements:
+            st.markdown(f"- {requirement}")
     client_pdf, internal_pdf = build_quote_pdfs(quote, margin_tiers)
     cols = st.columns(3)
     cols[0].download_button(

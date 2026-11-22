@@ -101,13 +101,16 @@ def build_quote_pdfs(quote, margin_tiers):
         description = (
             f"{item['codigo']} - {item['nombre'] or 'Diseno sin nombre'}"
         )
+        dimensions = (
+            f"Medidas: {item['ancho_cm']:g} x {item['alto_cm']:g} cm"
+        )
         design_lines_client.extend([
-            f"{description} | {item['cantidad']} piezas",
+            f"{description} | {item['cantidad']} piezas | {dimensions}",
             f"  Precio por pieza: ${item['price_unit']:,.2f} | "
             f"Subtotal: ${item['price_total']:,.2f}",
         ])
         design_lines_internal.extend([
-            f"{description} | {item['cantidad']} piezas | "
+            f"{description} | {item['cantidad']} piezas | {dimensions} | "
             f"Margen: {item['margen_pct']:.2f}%",
             f"  Costo: ${item['cost_total']:,.2f} | "
             f"Precio unitario: ${item['price_unit']:,.2f} | "

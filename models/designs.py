@@ -1,11 +1,17 @@
 from pathlib import Path
-from typing import Dict, Optional, TypedDict
+from typing import Dict, List, Optional, TypedDict
 
 
 DESIGN_CATEGORIES: Dict[str, str] = {
-    "000": "Boda",
-    "100": "Bautizo",
-    "200": "XV",
+    "0000": "Boda",
+    "1000": "Bautizo",
+    "2000": "XV",
+}
+
+LEGACY_DESIGN_CATEGORIES: Dict[str, str] = {
+    "000": "0000",
+    "100": "1000",
+    "200": "2000",
 }
 
 
@@ -13,6 +19,16 @@ class DesignCatalogRecord(TypedDict):
     id: int
     codigo: str
     categoria_codigo: str
+    category_id: str
+    subcategory_id: int
+    subcategory_name: str
+    design_number: int
+    nombre: str
+    activo: int
+
+
+class DesignSubcategoryRecord(TypedDict):
+    id: int
     nombre: str
     activo: int
 
@@ -32,13 +48,19 @@ class DesignQuoteLine(TypedDict):
     id: str
     catalog_id: Optional[int]
     codigo: str
+    category_id: str
+    subcategory_id: Optional[int]
+    design_number: Optional[int]
     categoria_codigo: str
     categoria_nombre: str
     nombre: str
+    ancho_cm: float
+    alto_cm: float
     cantidad: int
     bordado_minutos: float
     preparacion_minutos: float
     minutos_adicionales: float
+    materiales: List[Dict[str, object]]
 
 
 class DesignPriceResult(TypedDict):
