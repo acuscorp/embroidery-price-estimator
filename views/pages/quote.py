@@ -18,7 +18,10 @@ from services.quote_calculations import (
     validate_quote,
 )
 from views.configuration.designs import new_design_item, render_designs
-from views.configuration.direct_costs import get_direct_cost_config
+from views.configuration.direct_costs import (
+    get_direct_cost_config,
+    render_direct_cost_config,
+)
 from views.configuration.financial import calculate_financial_config
 from views.configuration.margin import render_margin_config
 from views.configuration.materials import get_material_config
@@ -47,9 +50,12 @@ def _restore_quote():
             if key == "delivery_date" and isinstance(value, str):
                 value = date.fromisoformat(value)
             st.session_state[key] = value
-        for name in ("monthly_costs", "materials", "extras", "margin_tiers"):
+        for name in ("monthly_costs", "materials", "margin_tiers"):
             if name in loaded:
                 st.session_state[name] = pd.DataFrame(loaded[name])
+        if "extras" in loaded:
+            st.session_state["quote_extras"] = pd.DataFrame(loaded["extras"])
+        st.session_state.pop("quote_extras_editor", None)
         st.session_state.pop("monthly_cost_editor", None)
         st.session_state.pop("materials_editor", None)
         legacy_materials = loaded.get("materials", [])
@@ -270,6 +276,7 @@ def render_quote_page():
     order = render_order_config()
     materials = get_material_config()
     design_items = render_designs(materials)
+    render_direct_cost_config()
     extras, extras_total = get_direct_cost_config()
     margin_tiers = render_margin_config()
     calculated_items, material_detail, materials_total = _calculate_design_items(

@@ -49,12 +49,6 @@ DEFAULT_CONFIGURATION = {
             "Unidad": "cm²",
         },
     ],
-    "extras": [
-        {"Concepto": "Digitalización", "Activo": False, "Importe ($)": 0.0},
-        {"Concepto": "Empaque especial", "Activo": False, "Importe ($)": 0.0},
-        {"Concepto": "Envío", "Activo": False, "Importe ($)": 0.0},
-        {"Concepto": "Proceso externo", "Activo": False, "Importe ($)": 0.0},
-    ],
     "heads": 2,
     "machine_heads_note": True,
 }
@@ -64,7 +58,8 @@ def with_default_configuration(configuration):
     resolved = copy.deepcopy(DEFAULT_CONFIGURATION)
     if configuration:
         resolved.update(configuration)
-    for name in ("monthly_costs", "materials", "extras"):
+    resolved.pop("extras", None)
+    for name in ("monthly_costs", "materials"):
         if not isinstance(resolved[name], list) or not resolved[name]:
             resolved[name] = copy.deepcopy(DEFAULT_CONFIGURATION[name])
     for name in (

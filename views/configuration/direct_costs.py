@@ -1,21 +1,30 @@
+import pandas as pd
 import streamlit as st
 
 from services.quote_calculations import calculate_direct_costs
-from views.configuration.state import ensure_configuration_state
+
+
+DEFAULT_EXTRAS = [
+    {"Concepto": "Digitalización", "Activo": False, "Importe ($)": 0.0},
+    {"Concepto": "Empaque especial", "Activo": False, "Importe ($)": 0.0},
+    {"Concepto": "Envío", "Activo": False, "Importe ($)": 0.0},
+    {"Concepto": "Proceso externo", "Activo": False, "Importe ($)": 0.0},
+]
 
 
 def get_direct_cost_config():
-    ensure_configuration_state()
-    return st.session_state.extras, calculate_direct_costs(
-        st.session_state.extras
+    if "quote_extras" not in st.session_state:
+        st.session_state.quote_extras = pd.DataFrame(DEFAULT_EXTRAS)
+    return st.session_state.quote_extras, calculate_direct_costs(
+        st.session_state.quote_extras
     )
 
 
 def render_direct_cost_config():
     st.header("Otros costos directos del pedido")
     st.caption(
-        "Edita aquí los valores base reutilizables en nuevas cotizaciones. "
-        "Cada cotización conserva su propia copia de estos importes."
+        "Estos conceptos e importes son específicos de esta cotización y se "
+        "conservan al guardarla."
     )
     extras, _ = get_direct_cost_config()
     extras = st.data_editor(
@@ -29,7 +38,7 @@ def render_direct_cost_config():
                 "Importe ($)", min_value=0.0, step=0.01, format="$%.2f"
             ),
         },
-        key="extras_editor",
+        key="quote_extras_editor",
     )
-    st.session_state.extras = extras
+    st.session_state.quote_extras = extras
     return get_direct_cost_config()

@@ -69,7 +69,7 @@ class ConfigurationRepositoryTests(unittest.TestCase):
 
         self.assertIsNone(configuration_repository.get_configuration())
 
-    def test_default_configuration_loads_with_25000_monthly_goal(self):
+    def test_defaults_load_with_25000_goal_and_no_order_specific_costs(self):
         configuration = configuration_repository.with_default_configuration(None)
 
         self.assertEqual(configuration["monthly_goal"], 25000.0)
@@ -81,10 +81,7 @@ class ConfigurationRepositoryTests(unittest.TestCase):
             len(configuration["materials"]),
             len(configuration_repository.DEFAULT_CONFIGURATION["materials"]),
         )
-        self.assertEqual(
-            len(configuration["extras"]),
-            len(configuration_repository.DEFAULT_CONFIGURATION["extras"]),
-        )
+        self.assertNotIn("extras", configuration)
 
     def test_existing_configuration_with_empty_goal_uses_25000_default(self):
         configuration = configuration_repository.with_default_configuration(
@@ -99,7 +96,7 @@ class ConfigurationRepositoryTests(unittest.TestCase):
             {
                 "monthly_costs": [],
                 "materials": [],
-                "extras": [],
+                "extras": [{"Concepto": "Old global extra"}],
                 "monthly_goal": None,
                 "idle_pct": None,
                 "work_hours": None,
@@ -114,8 +111,7 @@ class ConfigurationRepositoryTests(unittest.TestCase):
                          configuration_repository.DEFAULT_CONFIGURATION["monthly_costs"])
         self.assertEqual(configuration["materials"],
                          configuration_repository.DEFAULT_CONFIGURATION["materials"])
-        self.assertEqual(configuration["extras"],
-                         configuration_repository.DEFAULT_CONFIGURATION["extras"])
+        self.assertNotIn("extras", configuration)
         self.assertEqual(configuration["monthly_goal"], 25000.0)
         self.assertEqual(configuration["idle_pct"], 10.0)
         self.assertEqual(configuration["work_hours"], 8.0)
