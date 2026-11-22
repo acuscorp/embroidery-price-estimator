@@ -1,12 +1,10 @@
-import copy
-
 import pandas as pd
 import streamlit as st
 
 from repositories.configuration_repository import (
-    DEFAULT_CONFIGURATION,
     get_configuration,
     save_configuration,
+    with_default_configuration,
 )
 
 
@@ -14,8 +12,7 @@ def ensure_configuration_state():
     if st.session_state.get("configuration_state_loaded"):
         return
 
-    configuration = get_configuration() or copy.deepcopy(DEFAULT_CONFIGURATION)
-    configuration = {**DEFAULT_CONFIGURATION, **configuration}
+    configuration = with_default_configuration(get_configuration())
     for name in ("monthly_costs", "materials", "extras"):
         st.session_state[name] = pd.DataFrame(configuration[name])
     for name in (

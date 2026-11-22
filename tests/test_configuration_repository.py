@@ -69,6 +69,38 @@ class ConfigurationRepositoryTests(unittest.TestCase):
 
         self.assertIsNone(configuration_repository.get_configuration())
 
+    def test_default_configuration_loads_with_25000_monthly_goal(self):
+        configuration = configuration_repository.with_default_configuration(None)
+
+        self.assertEqual(configuration["monthly_goal"], 25000.0)
+        self.assertEqual(
+            len(configuration["monthly_costs"]),
+            len(configuration_repository.DEFAULT_CONFIGURATION["monthly_costs"]),
+        )
+        self.assertEqual(
+            len(configuration["materials"]),
+            len(configuration_repository.DEFAULT_CONFIGURATION["materials"]),
+        )
+        self.assertEqual(
+            len(configuration["extras"]),
+            len(configuration_repository.DEFAULT_CONFIGURATION["extras"]),
+        )
+
+    def test_existing_configuration_with_empty_goal_uses_25000_default(self):
+        configuration = configuration_repository.with_default_configuration(
+            {"monthly_goal": None, "heads": 4}
+        )
+
+        self.assertEqual(configuration["monthly_goal"], 25000.0)
+        self.assertEqual(configuration["heads"], 4)
+
+    def test_explicit_monthly_goal_is_preserved(self):
+        configuration = configuration_repository.with_default_configuration(
+            {"monthly_goal": 17500.0}
+        )
+
+        self.assertEqual(configuration["monthly_goal"], 17500.0)
+
 
 if __name__ == "__main__":
     unittest.main()

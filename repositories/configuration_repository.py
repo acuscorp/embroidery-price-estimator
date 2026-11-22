@@ -1,3 +1,4 @@
+import copy
 import json
 import sqlite3
 from datetime import datetime
@@ -20,7 +21,7 @@ DEFAULT_CONFIGURATION = {
         {"Concepto": "Depreciación", "Activo": True, "Costo mensual ($)": 1500.0},
         {"Concepto": "Reserva de refacciones", "Activo": True, "Costo mensual ($)": 250.0},
     ],
-    "monthly_goal": None,
+    "monthly_goal": 25000.0,
     "idle_pct": 10.0,
     "work_hours": 8.0,
     "work_days": 26,
@@ -57,6 +58,15 @@ DEFAULT_CONFIGURATION = {
     "heads": 2,
     "machine_heads_note": True,
 }
+
+
+def with_default_configuration(configuration):
+    resolved = copy.deepcopy(DEFAULT_CONFIGURATION)
+    if configuration:
+        resolved.update(configuration)
+    if resolved["monthly_goal"] is None:
+        resolved["monthly_goal"] = DEFAULT_CONFIGURATION["monthly_goal"]
+    return resolved
 
 
 def get_configuration():
