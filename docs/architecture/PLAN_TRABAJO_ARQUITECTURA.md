@@ -51,21 +51,6 @@ Este trabajo comprende exclusivamente **análisis, arquitectura y diseño**.
 
 La implementación se realizará en una etapa posterior, una vez que el diseño y la arquitectura estén suficientemente definidos.
 
-## Seguimiento de objetivos oficiales por clase
-
-Esta tabla es el control de avance de la etapa 1. Se actualizará conforme se aplique cada clase al proyecto. Los estados deben respaldarse con evidencia en el documento de aplicación correspondiente; no se marcará una clase como terminada por haber mencionado superficialmente sus temas.
-
-| Clase | Objetivos oficiales | Estado | Evidencia / referencia |
-|---|---|---|---|
-| CL01.01.01 — Concepto y propósito de la arquitectura | 1. Explicar qué es la arquitectura y qué problema resuelve. 2. Distinguir descripción arquitectónica de funciones, tecnologías y código. 3. Reconocer elementos, relaciones y propiedades externamente visibles. 4. Explicar la arquitectura como abstracción. 5. Relacionar estructura y atributos de calidad. 6. Reconocer la influencia del contexto y los compromisos. | En progreso | [Seguimiento detallado de objetivos y evidencia](https://github.com/acuscorp/SoftwareArchitecture/blob/main/AppliedProjects/BusinessManagement/CL01.01.01-Concepto-y-proposito.md). Los objetivos 1 y 2 están cubiertos; el 3 está en progreso; los objetivos 4, 5 y 6 están parciales. |
-| CL01.02.01 — Distinguir elementos, responsabilidades y relaciones | Según la ficha oficial de la clase. | Pendiente | No iniciar hasta cerrar CL01.01.01. |
-| CL01.02.02 — Conectar estructura, runtime y vistas introductorias | Según la ficha oficial de la clase. | Pendiente | Respetar la secuencia curricular. |
-| CL01.03.01 — Arquitectura, diseño e implementación | Según la ficha oficial de la clase. | Pendiente | Respetar la secuencia curricular. |
-| CL01.04.01 — Contexto y participantes | Según la ficha oficial de la clase. | Pendiente | Respetar la secuencia curricular. |
-| CL01.05.01 — Decisiones arquitectónicas | Según la ficha oficial de la clase. | Pendiente | Respetar la secuencia curricular. |
-
-**Estados:** Pendiente · En progreso · Parcial · Cubierto.
-
 ## 5. Etapa 1: Aplicar al cotizador las clases ya estudiadas
 
 Se trabajará en el orden de la ruta curricular. En esta etapa no repetiremos las clases como lecciones teóricas: aplicaremos sus conceptos y criterios al sistema actual.
