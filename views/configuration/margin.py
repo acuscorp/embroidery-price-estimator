@@ -14,7 +14,10 @@ DEFAULT_MARGINS = [
 def render_margin_config():
     st.header("Margen y resultado")
     st.caption("El tramo se aplica por separado a la cantidad de cada diseño.")
-    if "margin_tiers" not in st.session_state:
+    if (
+        "margin_tiers" not in st.session_state
+        or st.session_state.margin_tiers.empty
+    ):
         st.session_state.margin_tiers = pd.DataFrame(DEFAULT_MARGINS)
 
     edited = st.data_editor(

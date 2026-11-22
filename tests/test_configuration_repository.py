@@ -94,6 +94,36 @@ class ConfigurationRepositoryTests(unittest.TestCase):
         self.assertEqual(configuration["monthly_goal"], 25000.0)
         self.assertEqual(configuration["heads"], 4)
 
+    def test_existing_empty_config_tables_restore_their_defaults(self):
+        configuration = configuration_repository.with_default_configuration(
+            {
+                "monthly_costs": [],
+                "materials": [],
+                "extras": [],
+                "monthly_goal": None,
+                "idle_pct": None,
+                "work_hours": None,
+                "work_days": None,
+                "operator_monthly_pay": None,
+                "heads": None,
+                "machine_heads_note": None,
+            }
+        )
+
+        self.assertEqual(configuration["monthly_costs"],
+                         configuration_repository.DEFAULT_CONFIGURATION["monthly_costs"])
+        self.assertEqual(configuration["materials"],
+                         configuration_repository.DEFAULT_CONFIGURATION["materials"])
+        self.assertEqual(configuration["extras"],
+                         configuration_repository.DEFAULT_CONFIGURATION["extras"])
+        self.assertEqual(configuration["monthly_goal"], 25000.0)
+        self.assertEqual(configuration["idle_pct"], 10.0)
+        self.assertEqual(configuration["work_hours"], 8.0)
+        self.assertEqual(configuration["work_days"], 26)
+        self.assertEqual(configuration["operator_monthly_pay"], 8000.0)
+        self.assertEqual(configuration["heads"], 2)
+        self.assertTrue(configuration["machine_heads_note"])
+
     def test_explicit_monthly_goal_is_preserved(self):
         configuration = configuration_repository.with_default_configuration(
             {"monthly_goal": 17500.0}

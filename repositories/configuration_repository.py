@@ -64,8 +64,20 @@ def with_default_configuration(configuration):
     resolved = copy.deepcopy(DEFAULT_CONFIGURATION)
     if configuration:
         resolved.update(configuration)
-    if resolved["monthly_goal"] is None:
-        resolved["monthly_goal"] = DEFAULT_CONFIGURATION["monthly_goal"]
+    for name in ("monthly_costs", "materials", "extras"):
+        if not isinstance(resolved[name], list) or not resolved[name]:
+            resolved[name] = copy.deepcopy(DEFAULT_CONFIGURATION[name])
+    for name in (
+        "monthly_goal",
+        "idle_pct",
+        "work_hours",
+        "work_days",
+        "operator_monthly_pay",
+        "heads",
+        "machine_heads_note",
+    ):
+        if resolved[name] is None:
+            resolved[name] = DEFAULT_CONFIGURATION[name]
     return resolved
 
 
