@@ -90,7 +90,7 @@ No se trata de eliminar la teoría ni de cambiar los objetivos de las clases. Se
 6. **Evaluar:** identificar fortalezas, problemas, limitaciones y aspectos desconocidos.
 7. **Diseñar:** elaborar modelos o propuestas dentro del alcance de la clase.
 8. **Justificar:** explicar las razones y consecuencias de las decisiones que se planteen.
-9. **Documentar:** registrar resultados, decisiones y pendientes para las siguientes clases.
+9. **Documentar y transferir a arc42:** registrar resultados, decisiones y pendientes; después determinar qué información corresponde a cada uno de los doce archivos de arc42 y crear, añadir o actualizar su contenido según corresponda. Una clase puede aportar a varias secciones y una sección puede recibir aportaciones de varias clases.
 
 No todos los pasos producirán necesariamente un cambio. Una conclusión válida puede ser conservar el diseño existente o determinar que falta evidencia.
 
@@ -117,6 +117,23 @@ Mantendremos separadas las siguientes clases de información:
 
 No presentaremos una inferencia como si fuera un hecho ni una propuesta como si ya fuera una decisión aprobada.
 
+### 9.1 Integración progresiva con arc42
+
+La información obtenida y validada durante cada clase se incorporará progresivamente a los doce archivos de documentación de arc42 del proyecto.
+
+Al cerrar el trabajo de cada clase, revisaremos sus resultados y determinaremos, para cada sección de arc42 afectada, si corresponde:
+
+- **Crear:** incorporar contenido cuando todavía no exista información documentada sobre el tema.
+- **Añadir:** integrar nuevos hallazgos sin sustituir el contenido válido que ya existe.
+- **Actualizar:** corregir o sustituir contenido cuando la nueva evidencia o el análisis justifiquen un cambio.
+- **Dejar pendiente:** registrar explícitamente lo que todavía no pueda concluirse por falta de evidencia o porque corresponde a una clase posterior.
+
+Una clase puede aportar información a uno o varios archivos de arc42, y un mismo archivo puede recibir información de varias clases. No es necesario modificar los doce archivos en cada clase: solo se tocarán los que correspondan a los resultados obtenidos.
+
+La documentación arc42 será el repositorio acumulativo del conocimiento arquitectónico del cotizador. El plan de trabajo seguirá siendo el documento rector para organizar las clases, controlar el avance y establecer el método de trabajo.
+
+Solo se incorporarán conclusiones respaldadas por el trabajo realizado. Las propuestas, inferencias y pendientes conservarán su clasificación y no se presentarán como decisiones aprobadas ni como hechos confirmados.
+
 ## 10. Entregables esperados
 
 - Diagnóstico de la arquitectura actual.
@@ -125,6 +142,7 @@ No presentaremos una inferencia como si fuera un hecho ni una propuesta como si 
 - Identificación de necesidades, participantes y restricciones.
 - Registro de decisiones arquitectónicas (ADR).
 - Inventario de fortalezas, problemas y oportunidades.
+- Los doce archivos de documentación arc42, construidos y actualizados progresivamente con los resultados fundamentados de las clases.
 - Diseño y arquitectura objetivo propuestos.
 - Plan de evolución hacia la aplicación que se implementará posteriormente.
 
