@@ -59,7 +59,7 @@ La documentación se organizará por preguntas arquitectónicas, no por clases c
 
 | Sección arc42 | Pregunta que debe responder | Estado |
 |---|---|---|
-| 1. Introducción y objetivos | ¿Qué sistema estamos construyendo y qué objetivos debe satisfacer? | En elaboración |
+| 1. Introducción y objetivos | ¿Qué sistema estamos construyendo y qué objetivos debe satisfacer? | Borrador creado; pendiente de validación |
 | 2. Restricciones arquitectónicas | ¿Qué condiciones limitan las soluciones posibles? | Pendiente de consolidación |
 | 3. Contexto y alcance | ¿Quién utiliza el sistema, con qué actores y sistemas externos interactúa y qué queda dentro/fuera? | En elaboración |
 | 4. Estrategia de solución | ¿Qué decisiones fundamentales orientan la solución y por qué? | Pendiente de evidencia y evaluación |
