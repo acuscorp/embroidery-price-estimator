@@ -2,9 +2,11 @@
 
 Tomaremos como guía las clases del curso **Software Architecture** y adaptaremos sus conceptos y actividades al proyecto **Cotizador de Bordados**.
 
-La información que obtengamos al trabajar cada clase se incorporará a los doce archivos de documentación **arc42**, según corresponda. Crearemos, añadiremos o actualizaremos el contenido de cada archivo; una clase puede aportar información a varias secciones.
+La ruta curricular y los documentos oficiales de las clases indican qué estudiar y en qué orden. Aplicaremos ese contenido al cotizador y la información obtenida se incorporará a los doce archivos de documentación **arc42**, creando, añadiendo o actualizando lo que corresponda.
 
-## Repositorios
+## Referencias
 
-- [Curso Software Architecture](https://github.com/acuscorp/SoftwareArchitecture)
-- [Proyecto Cotizador de Bordados](https://github.com/acuscorp/embroidery-price-estimator)
+- **Curso Software Architecture:** [Repositorio](https://github.com/acuscorp/SoftwareArchitecture)
+- **Ruta curricular:** [LEARNING_PATH.md](https://github.com/acuscorp/SoftwareArchitecture/blob/main/LEARNING_PATH.md)
+- **Clases oficiales:** [Carpeta Classes](https://github.com/acuscorp/SoftwareArchitecture/tree/main/Classes)
+- **Proyecto Cotizador de Bordados:** [Repositorio](https://github.com/acuscorp/embroidery-price-estimator)
