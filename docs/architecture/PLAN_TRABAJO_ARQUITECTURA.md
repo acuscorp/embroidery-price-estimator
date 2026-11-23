@@ -1,8 +1,12 @@
 # Plan de trabajo
 
-Tomaremos como guía las clases del curso **Software Architecture** y adaptaremos sus conceptos y actividades al proyecto **Cotizador de Bordados**.
+Tomaremos como guía las clases del curso **Software Architecture** y adaptaremos sus conceptos y actividades al proyecto, actualmente denominado **Cotizador de Bordados**.
 
-La ruta curricular y los documentos oficiales de las clases indican qué estudiar y en qué orden. Aplicaremos ese contenido al cotizador y la información obtenida se incorporará a los doce archivos de documentación **arc42**, creando, añadiendo o actualizando lo que corresponda.
+El propósito del sistema objetivo es la **gestión integral del negocio de bordados**, no solamente la elaboración de cotizaciones. El alcance contempla clientes, diseños, cotizaciones, órdenes, pedidos, producción, entregas, pagos, usuarios, historial y auditoría, así como reportes y análisis. A futuro se contempla aprovechar la información histórica mediante análisis estadístico e inteligencia artificial.
+
+Debemos distinguir el sistema actual de la visión objetivo: las capacidades que todavía no estén implementadas forman parte del sistema que se analizará y diseñará; no deben descartarse por esa razón.
+
+La ruta curricular y los documentos oficiales de las clases indican qué estudiar y en qué orden. Aplicaremos ese contenido al sistema integral de gestión del negocio de bordados y la información obtenida se incorporará a los doce archivos de documentación **arc42**, creando, añadiendo o actualizando lo que corresponda.
 
 ## Alcance y restricción
 
@@ -19,4 +23,5 @@ El proyecto se limita exclusivamente al **análisis y diseño de arquitectura de
 - **Curso Software Architecture:** [Repositorio](https://github.com/acuscorp/SoftwareArchitecture)
 - **Ruta curricular:** [LEARNING_PATH.md](https://github.com/acuscorp/SoftwareArchitecture/blob/main/LEARNING_PATH.md)
 - **Clases oficiales:** [Carpeta Classes](https://github.com/acuscorp/SoftwareArchitecture/tree/main/Classes)
-- **Proyecto Cotizador de Bordados:** [Repositorio](https://github.com/acuscorp/embroidery-price-estimator)
+- **Aplicación del curso al negocio de bordados:** [Concepto y propósito](https://github.com/acuscorp/SoftwareArchitecture/blob/main/AppliedProjects/BusinessManagement/CL01.01.01-Concepto-y-proposito.md)
+- **Proyecto:** [Repositorio Cotizador de Bordados](https://github.com/acuscorp/embroidery-price-estimator)
